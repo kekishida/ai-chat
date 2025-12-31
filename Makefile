@@ -1,5 +1,9 @@
 .PHONY: help init dev build start clean lint test deploy gcp-deploy gcp-terminate docker-build
 
+# Google Cloud SDK のパスを設定
+GCLOUD_SDK_PATH := $(HOME)/google-cloud-sdk/bin
+export PATH := $(GCLOUD_SDK_PATH):$(PATH)
+
 # デフォルトターゲット - ヘルプを表示
 help:
 	@echo "AI Chat - 利用可能なコマンド:"
