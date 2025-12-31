@@ -1,0 +1,71 @@
+name: Terminate Cloud Run Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      delete_images:
+        description: 'Delete Docker images from GCR'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PROJECT_ID: ai-chat-482910
+  SERVICE_NAME: ai-chat
+  REGION: asia-northeast1
+
+jobs:
+  terminate:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Delete Cloud Run Service
+        run: |
+          echo "Deleting Cloud Run service: ${{ env.SERVICE_NAME }}"
+          gcloud run services delete ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --quiet
+          echo "Cloud Run service deleted successfully!"
+
+      - name: Delete Docker images from GCR
+        if: ${{ inputs.delete_images }}
+        run: |
+          echo "Deleting Docker images from GCR..."
+          # Delete all images for this service
+          gcloud container images delete gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest --quiet || echo "Latest image not found"
+
+          # List and delete all tagged images
+          IMAGES=$(gcloud container images list-tags gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }} --format="get(digest)")
+          for DIGEST in $IMAGES; do
+            echo "Deleting image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}@$DIGEST"
+            gcloud container images delete gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}@$DIGEST --quiet || echo "Failed to delete $DIGEST"
+          done
+          echo "Docker images deleted successfully!"
+
+      - name: Summary
+        run: |
+          echo "==================================="
+          echo "Termination complete!"
+          echo "==================================="
+          echo "Cloud Run service '${{ env.SERVICE_NAME }}' has been deleted from region '${{ env.REGION }}'."
+          if [ "${{ inputs.delete_images }}" == "true" ]; then
+            echo "Docker images have also been deleted from GCR."
+          else
+            echo "Docker images were NOT deleted. To delete them, run this workflow again with 'delete_images' option enabled."
+          fi

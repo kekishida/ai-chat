@@ -1,4 +1,4 @@
-.PHONY: help init dev build start clean lint test deploy gcp-deploy docker-build
+.PHONY: help init dev build start clean lint test deploy gcp-deploy gcp-terminate docker-build
 
 # デフォルトターゲット - ヘルプを表示
 help:
@@ -21,6 +21,7 @@ help:
 	@echo "  make docker-build  - Dockerイメージをビルド"
 	@echo "  make gcp-deploy    - Google Cloud Runにデプロイ"
 	@echo "  make gcp-set-env   - Cloud Runの環境変数を設定"
+	@echo "  make gcp-terminate - Cloud Runサービスを削除"
 	@echo "  make deploy-vercel - Vercelにデプロイ"
 	@echo ""
 	@echo "【GitHub Actions セットアップ】"
@@ -181,6 +182,37 @@ gcp-set-env:
 		--region asia-northeast1 \
 		--set-env-vars ANTHROPIC_API_KEY=$$api_key,MONGODB_URI=$$mongo_uri
 	@echo "✅ 環境変数を設定しました"
+
+# Google Cloud Runサービスを削除（terminate）
+gcp-terminate:
+	@echo "⚠️  警告: Cloud Runサービス 'ai-chat' を削除します"
+	@echo ""
+	@read -p "本当に削除しますか？ (yes/no): " -r; \
+	echo; \
+	if [ "$$REPLY" = "yes" ]; then \
+		echo "🗑️  Cloud Runサービスを削除中..."; \
+		gcloud run services delete ai-chat \
+			--region asia-northeast1 \
+			--quiet; \
+		echo "✅ サービスを削除しました"; \
+		echo ""; \
+		read -p "Dockerイメージも削除しますか？ (yes/no): " -r; \
+		echo; \
+		if [ "$$REPLY" = "yes" ]; then \
+			echo "🗑️  Dockerイメージを削除中..."; \
+			gcloud container images delete gcr.io/ai-chat-482910/ai-chat:latest --quiet || echo "⚠️  latest イメージが見つかりません"; \
+			IMAGES=$$(gcloud container images list-tags gcr.io/ai-chat-482910/ai-chat --format="get(digest)"); \
+			for DIGEST in $$IMAGES; do \
+				echo "削除中: gcr.io/ai-chat-482910/ai-chat@$$DIGEST"; \
+				gcloud container images delete gcr.io/ai-chat-482910/ai-chat@$$DIGEST --quiet || echo "⚠️  $$DIGEST の削除に失敗"; \
+			done; \
+			echo "✅ Dockerイメージを削除しました"; \
+		else \
+			echo "ℹ️  Dockerイメージは保持されました"; \
+		fi; \
+	else \
+		echo "❌ 削除をキャンセルしました"; \
+	fi
 
 # GitHub Actions セットアップ用のヘルパーコマンド
 gcp-create-sa:

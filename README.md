@@ -74,6 +74,11 @@ make github-actions-setup
 
 # mainブランチへのプッシュで自動デプロイ
 git push origin main
+
+# デプロイしたサービスの削除（terminate）
+# GitHub Actionsページから「Terminate Cloud Run Service」ワークフローを手動実行
+# または
+make gcp-terminate
 ```
 
 ## 利用可能なコマンド
@@ -93,6 +98,7 @@ make help  # 全コマンドを表示
 
 - `make docker-build` - Docker イメージをビルド
 - `make gcp-deploy` - Cloud Run にデプロイ
+- `make gcp-terminate` - Cloud Run サービスを削除
 - `make deploy-vercel` - Vercel にデプロイ
 
 ### GitHub Actions

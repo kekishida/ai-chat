@@ -129,6 +129,28 @@ git push origin main
 #### 手動デプロイ
 GitHub の Actions タブから「Deploy to Cloud Run」ワークフローを選択し、「Run workflow」をクリック
 
+### ステップ6: サービスの削除（Terminate）
+
+デプロイしたCloud Runサービスを削除する場合：
+
+#### GitHub Actionsを使用して削除
+1. GitHub の Actions タブにアクセス
+2. 「Terminate Cloud Run Service」ワークフローを選択
+3. 「Run workflow」をクリック
+4. オプション: Dockerイメージも削除する場合は「Delete Docker images from GCR」にチェック
+5. ワークフローが完了すると、Cloud Runサービスが削除されます
+
+#### ローカルから削除
+```bash
+# Cloud RunサービスとオプションでDockerイメージを削除
+make gcp-terminate
+
+# または直接gcloudコマンドを使用
+gcloud run services delete ai-chat --region asia-northeast1
+```
+
+**注意:** サービスを削除すると、アプリケーションにアクセスできなくなります。削除する前に、本当に必要か確認してください。
+
 ## トラブルシューティング
 
 ### 認証エラーが発生する場合
