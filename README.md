@@ -10,7 +10,7 @@ Claude API を使用した AI チャットボットアプリケーション
 - ✅ 会話履歴の保存・管理（MongoDB）
 - ✅ レスポンシブデザイン
 - ✅ Google Cloud Run へのデプロイ対応
-- ✅ GitHub Actions による自動デプロイ
+- ✅ GitHub Actions による自動デプロイ（設定済み）
 
 ## 技術スタック
 
