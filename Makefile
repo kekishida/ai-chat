@@ -176,8 +176,10 @@ gcp-deploy:
 # Google Cloud Runの環境変数を設定
 gcp-set-env:
 	@echo "🔧 Cloud Runの環境変数を設定中..."
-	@read -p "ANTHROPIC_API_KEY: " api_key; \
-	read -p "MONGODB_URI: " mongo_uri; \
+	@printf "ANTHROPIC_API_KEY: "; \
+	read api_key; \
+	printf "MONGODB_URI: "; \
+	read mongo_uri; \
 	gcloud run services update ai-chat \
 		--region asia-northeast1 \
 		--set-env-vars ANTHROPIC_API_KEY=$$api_key,MONGODB_URI=$$mongo_uri
@@ -187,8 +189,8 @@ gcp-set-env:
 gcp-terminate:
 	@echo "⚠️  警告: Cloud Runサービス 'ai-chat' を削除します"
 	@echo ""
-	@read -p "本当に削除しますか？ (yes/no): " -r; \
-	echo; \
+	@printf "本当に削除しますか？ (yes/no): "; \
+	read REPLY; \
 	if [ "$$REPLY" = "yes" ]; then \
 		echo "🗑️  Cloud Runサービスを削除中..."; \
 		gcloud run services delete ai-chat \
@@ -196,9 +198,9 @@ gcp-terminate:
 			--quiet; \
 		echo "✅ サービスを削除しました"; \
 		echo ""; \
-		read -p "Dockerイメージも削除しますか？ (yes/no): " -r; \
-		echo; \
-		if [ "$$REPLY" = "yes" ]; then \
+		printf "Dockerイメージも削除しますか？ (yes/no): "; \
+		read REPLY2; \
+		if [ "$$REPLY2" = "yes" ]; then \
 			echo "🗑️  Dockerイメージを削除中..."; \
 			gcloud container images delete gcr.io/ai-chat-482910/ai-chat:latest --quiet || echo "⚠️  latest イメージが見つかりません"; \
 			IMAGES=$$(gcloud container images list-tags gcr.io/ai-chat-482910/ai-chat --format="get(digest)"); \
@@ -237,7 +239,8 @@ gcp-grant-sa-permissions:
 
 gcp-setup-wif:
 	@echo "🔧 Workload Identity Federationをセットアップ中..."
-	@read -p "GitHubユーザー名を入力してください: " github_user; \
+	@printf "GitHubユーザー名を入力してください: "; \
+	read github_user; \
 	gcloud iam workload-identity-pools create "github-pool" \
 		--project="ai-chat-482910" \
 		--location="global" \
@@ -271,9 +274,9 @@ gcp-create-sa-key:
 	@echo "⚠️  注意: サービスアカウントキーの使用は非推奨です"
 	@echo "   可能な限り Workload Identity Federation を使用してください"
 	@echo ""
-	@read -p "本当に続行しますか？ (y/N): " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+	@printf "本当に続行しますか？ (y/N): "; \
+	read REPLY; \
+	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
 		gcloud iam service-accounts keys create key.json \
 			--iam-account=github-actions@ai-chat-482910.iam.gserviceaccount.com; \
 		echo ""; \
