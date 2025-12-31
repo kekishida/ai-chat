@@ -1,8 +1,8 @@
 .PHONY: help init dev build start clean lint test deploy gcp-deploy gcp-terminate docker-build
 
 # Google Cloud SDK のパスを設定
-GCLOUD_SDK_PATH := $(HOME)/google-cloud-sdk/bin
-export PATH := $(GCLOUD_SDK_PATH):$(PATH)
+GCLOUD_SDK_PATH := /home/k_kishi/google-cloud-sdk/bin
+GCLOUD := $(shell if [ -f "/home/k_kishi/google-cloud-sdk/bin/gcloud" ]; then echo "/home/k_kishi/google-cloud-sdk/bin/gcloud"; else which gcloud 2>/dev/null || echo "gcloud"; fi)
 
 # デフォルトターゲット - ヘルプを表示
 help:
@@ -170,16 +170,16 @@ docker-build:
 # Google Cloud Runにデプロイ
 gcp-deploy:
 	@echo "🚀 Google Cloud Runにデプロイ中..."
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
 	fi
-	./deploy-gcp.sh
+	PATH="$(GCLOUD_SDK_PATH):$$PATH" ./deploy-gcp.sh
 
 # Google Cloud Runの環境変数を設定
 gcp-set-env:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
@@ -189,14 +189,14 @@ gcp-set-env:
 	read api_key; \
 	printf "MONGODB_URI: "; \
 	read mongo_uri; \
-	gcloud run services update ai-chat \
+	$(GCLOUD) run services update ai-chat \
 		--region asia-northeast1 \
 		--set-env-vars ANTHROPIC_API_KEY=$$api_key,MONGODB_URI=$$mongo_uri
 	@echo "✅ 環境変数を設定しました"
 
 # Google Cloud Runサービスを削除（terminate）
 gcp-terminate:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo ""; \
 		echo "以下のいずれかの方法でCloud Runサービスを削除してください:"; \
@@ -222,19 +222,19 @@ gcp-terminate:
 	read REPLY; \
 	if [ "$$REPLY" = "yes" ]; then \
 		echo "🗑️  Cloud Runサービスを削除中..."; \
-		if gcloud run services delete ai-chat --region asia-northeast1 --quiet; then \
+		if $(GCLOUD) run services delete ai-chat --region asia-northeast1 --quiet; then \
 			echo "✅ サービスを削除しました"; \
 			echo ""; \
 			printf "Dockerイメージも削除しますか？ (yes/no): "; \
 			read REPLY2; \
 			if [ "$$REPLY2" = "yes" ]; then \
 				echo "🗑️  Dockerイメージを削除中..."; \
-				gcloud container images delete gcr.io/ai-chat-482910/ai-chat:latest --quiet 2>/dev/null || echo "⚠️  latest イメージが見つかりません"; \
-				IMAGES=$$(gcloud container images list-tags gcr.io/ai-chat-482910/ai-chat --format="get(digest)" 2>/dev/null); \
+				$(GCLOUD) container images delete gcr.io/ai-chat-482910/ai-chat:latest --quiet 2>/dev/null || echo "⚠️  latest イメージが見つかりません"; \
+				IMAGES=$$($(GCLOUD) container images list-tags gcr.io/ai-chat-482910/ai-chat --format="get(digest)" 2>/dev/null); \
 				if [ -n "$$IMAGES" ]; then \
 					for DIGEST in $$IMAGES; do \
 						echo "削除中: gcr.io/ai-chat-482910/ai-chat@$$DIGEST"; \
-						gcloud container images delete gcr.io/ai-chat-482910/ai-chat@$$DIGEST --quiet 2>/dev/null || echo "⚠️  $$DIGEST の削除に失敗"; \
+						$(GCLOUD) container images delete gcr.io/ai-chat-482910/ai-chat@$$DIGEST --quiet 2>/dev/null || echo "⚠️  $$DIGEST の削除に失敗"; \
 					done; \
 				fi; \
 				echo "✅ Dockerイメージを削除しました"; \
@@ -251,37 +251,37 @@ gcp-terminate:
 
 # GitHub Actions セットアップ用のヘルパーコマンド
 gcp-create-sa:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
 	fi
 	@echo "🔧 GitHub Actions用のサービスアカウントを作成中..."
-	gcloud iam service-accounts create github-actions \
+	$(GCLOUD) iam service-accounts create github-actions \
 		--display-name="GitHub Actions Deployment Account" \
 		--project=ai-chat-482910
 	@echo "✅ サービスアカウントを作成しました"
 
 gcp-grant-sa-permissions:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
 	fi
 	@echo "🔧 サービスアカウントに権限を付与中..."
-	gcloud projects add-iam-policy-binding ai-chat-482910 \
+	$(GCLOUD) projects add-iam-policy-binding ai-chat-482910 \
 		--member="serviceAccount:github-actions@ai-chat-482910.iam.gserviceaccount.com" \
 		--role="roles/run.admin"
-	gcloud projects add-iam-policy-binding ai-chat-482910 \
+	$(GCLOUD) projects add-iam-policy-binding ai-chat-482910 \
 		--member="serviceAccount:github-actions@ai-chat-482910.iam.gserviceaccount.com" \
 		--role="roles/storage.admin"
-	gcloud projects add-iam-policy-binding ai-chat-482910 \
+	$(GCLOUD) projects add-iam-policy-binding ai-chat-482910 \
 		--member="serviceAccount:github-actions@ai-chat-482910.iam.gserviceaccount.com" \
 		--role="roles/iam.serviceAccountUser"
 	@echo "✅ 権限を付与しました"
 
 gcp-setup-wif:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
@@ -289,11 +289,11 @@ gcp-setup-wif:
 	@echo "🔧 Workload Identity Federationをセットアップ中..."
 	@printf "GitHubユーザー名を入力してください: "; \
 	read github_user; \
-	gcloud iam workload-identity-pools create "github-pool" \
+	$(GCLOUD) iam workload-identity-pools create "github-pool" \
 		--project="ai-chat-482910" \
 		--location="global" \
 		--display-name="GitHub Actions Pool" || true; \
-	gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+	$(GCLOUD) iam workload-identity-pools providers create-oidc "github-provider" \
 		--project="ai-chat-482910" \
 		--location="global" \
 		--workload-identity-pool="github-pool" \
@@ -301,7 +301,7 @@ gcp-setup-wif:
 		--attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
 		--attribute-condition="assertion.repository_owner == '$$github_user'" \
 		--issuer-uri="https://token.actions.githubusercontent.com" || true; \
-	gcloud iam service-accounts add-iam-policy-binding "github-actions@ai-chat-482910.iam.gserviceaccount.com" \
+	$(GCLOUD) iam service-accounts add-iam-policy-binding "github-actions@ai-chat-482910.iam.gserviceaccount.com" \
 		--project="ai-chat-482910" \
 		--role="roles/iam.workloadIdentityUser" \
 		--member="principalSet://iam.googleapis.com/projects/305729078114/locations/global/workloadIdentityPools/github-pool/attribute.repository/$$github_user/ai-chat"
@@ -310,7 +310,7 @@ gcp-setup-wif:
 	@echo ""
 	@echo "以下の情報をGitHub Secretsに設定してください："
 	@echo ""
-	@gcloud iam workload-identity-pools providers describe "github-provider" \
+	@$(GCLOUD) iam workload-identity-pools providers describe "github-provider" \
 		--project="ai-chat-482910" \
 		--location="global" \
 		--workload-identity-pool="github-pool" \
@@ -319,7 +319,7 @@ gcp-setup-wif:
 	@echo "WIF_SERVICE_ACCOUNT: github-actions@ai-chat-482910.iam.gserviceaccount.com"
 
 gcp-create-sa-key:
-	@if ! command -v gcloud &> /dev/null; then \
+	@if ! $(GCLOUD) --version >/dev/null 2>&1; then \
 		echo "❌ Google Cloud SDKがインストールされていません"; \
 		echo "   https://cloud.google.com/sdk/docs/install からインストールしてください"; \
 		exit 1; \
@@ -330,7 +330,7 @@ gcp-create-sa-key:
 	@printf "本当に続行しますか？ (y/N): "; \
 	read REPLY; \
 	if [ "$$REPLY" = "y" ] || [ "$$REPLY" = "Y" ]; then \
-		gcloud iam service-accounts keys create key.json \
+		$(GCLOUD) iam service-accounts keys create key.json \
 			--iam-account=github-actions@ai-chat-482910.iam.gserviceaccount.com; \
 		echo ""; \
 		echo "✅ key.json を作成しました"; \
