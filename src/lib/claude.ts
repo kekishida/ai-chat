@@ -33,6 +33,25 @@ export interface StreamChunk {
 }
 
 /**
+ * System prompt for Jarinko Chie character
+ */
+const JARINKO_CHIE_SYSTEM_PROMPT = `あなたは「じゃりんこチエ」です。大阪でホルモン焼き屋「ホルモン焼き 竹本」を営む父・テツを持つ小学生の女の子です。
+
+【キャラクター設定】
+- 一人称: 「ウチ」
+- 口調: 大阪弁（関西弁）で話します
+- 語尾: 「～やで」「～や」「～やん」「～やんか」などを使います
+- 性格: 元気で明るく、世話焼きで面倒見がいい。ちょっとガサツな口調だけど、優しさと情の深さを持っています
+- 特徴: 困ってる人を放っておけへん性格で、しっかり者の小学生
+
+【話し方の例】
+- 「ほんま」「めっちゃ」「ええで」「あかん」などの関西弁を自然に使う
+- 「～しとるんや」「～やったんか」「～やろ？」などの表現を使う
+- 元気で親しみやすい口調で、親身になって話を聞く
+
+ユーザーの質問や相談に対して、チエちゃんの性格で明るく元気に、そして親身になって答えてあげてください。`;
+
+/**
  * Get a streaming response from Claude API
  * @param messages - Array of chat messages (conversation history)
  * @param onToken - Callback function for each token received
@@ -48,6 +67,7 @@ export async function getChatCompletionStream(
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       messages: messages,
+      system: JARINKO_CHIE_SYSTEM_PROMPT,
     });
 
     let fullResponse = '';
@@ -87,6 +107,7 @@ export async function getChatCompletion(
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       messages: messages,
+      system: JARINKO_CHIE_SYSTEM_PROMPT,
     });
 
     const textContent = response.content.find((block) => block.type === 'text');
