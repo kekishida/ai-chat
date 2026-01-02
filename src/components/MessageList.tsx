@@ -31,7 +31,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
       {messages.length === 0 && !isLoading && (
         <div className="flex items-center justify-center h-full text-gray-500">
           <div className="text-center">
-            <p className="text-lg font-semibold mb-2">AI Chatへようこそ！</p>
+            <p className="text-lg font-semibold mb-2">Ponko Chatへようこそ！</p>
             <p className="text-sm">メッセージを入力して会話を始めましょう</p>
           </div>
         </div>

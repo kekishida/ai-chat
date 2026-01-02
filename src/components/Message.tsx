@@ -36,7 +36,7 @@ export default function Message({ role, content, timestamp }: MessageProps) {
                 isUser ? 'text-blue-600' : 'text-green-600'
               }`}
             >
-              {isUser ? 'あなた' : 'チエちゃん'}
+              {isUser ? 'あなた' : 'ぽんこちゃん'}
             </span>
           </div>
           <div

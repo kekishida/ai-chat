@@ -14,7 +14,7 @@ export default function Header({
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">AI Chat</h1>
+        <h1 className="text-xl font-bold text-gray-800">Ponko Chat</h1>
         <div className="flex items-center space-x-2">
           <button
             onClick={onNewChat}
