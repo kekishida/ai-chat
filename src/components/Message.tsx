@@ -20,7 +20,7 @@ export default function Message({ role, content, timestamp }: MessageProps) {
         {/* Avatar */}
         <div className="flex-shrink-0">
           <Image
-            src={isUser ? '/avatars/user.svg' : '/avatars/chie.svg'}
+            src={isUser ? '/avatars/user.svg' : '/avatars/ponko_40x40.gif'}
             alt={isUser ? 'ユーザー' : 'チエちゃん'}
             width={40}
             height={40}
