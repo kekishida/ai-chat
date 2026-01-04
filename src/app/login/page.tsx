@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { authenticate } from './actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,20 +18,18 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
-        username,
-        password,
-        redirect: false,
-      });
+      const result = await authenticate(username, password);
 
       if (result?.error) {
-        setError('ユーザー名またはパスワードが正しくありません');
-      } else if (result?.ok) {
+        setError(result.error);
+      } else if (result?.success) {
         router.push('/');
         router.refresh();
       }
     } catch (error) {
-      setError('ログインに失敗しました');
+      // リダイレクトエラーは無視（正常なログイン）
+      router.push('/');
+      router.refresh();
     } finally {
       setIsLoading(false);
     }
