@@ -17,10 +17,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error('Username and password required');
         }
 
+        const username = credentials.username as string;
+        const password = credentials.password as string;
+
         await connectDB();
 
         const user = await User.findOne({
-          username: credentials.username,
+          username: username,
         }).lean();
 
         if (!user) {
@@ -28,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         const isValidPassword = await bcrypt.compare(
-          credentials.password,
+          password,
           user.passwordHash
         );
 
