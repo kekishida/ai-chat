@@ -21,6 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # NextAuth build-time placeholders (actual values set at runtime)
 ENV NEXTAUTH_URL=http://localhost:3000
 ENV NEXTAUTH_SECRET=build-time-placeholder-secret
+ENV AUTH_SECRET=build-time-placeholder-secret
 ENV ADMIN_EMAIL=admin@example.com
 ENV ADMIN_INVITE_CODE=BUILD_PLACEHOLDER
 

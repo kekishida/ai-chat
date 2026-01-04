@@ -47,6 +47,7 @@ MONGODB_URI=your_mongodb_uri_here
 # NextAuth Configuration
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret_here  # openssl rand -base64 32 で生成
+AUTH_SECRET=your_nextauth_secret_here      # NEXTAUTH_SECRETと同じ値
 ADMIN_EMAIL=admin@example.com
 ADMIN_INVITE_CODE=INITIAL_INVITE_CODE
 ```
@@ -159,6 +160,7 @@ ai-chat/
 | `MONGODB_URI` | MongoDB 接続文字列 | ✅ |
 | `NEXTAUTH_URL` | アプリケーションURL | ✅ |
 | `NEXTAUTH_SECRET` | NextAuth シークレットキー (`openssl rand -base64 32`で生成) | ✅ |
+| `AUTH_SECRET` | NextAuth v5 シークレットキー (NEXTAUTH_SECRETと同じ値) | ✅ |
 | `ADMIN_EMAIL` | 管理者のメールアドレス | ✅ |
 | `ADMIN_INVITE_CODE` | 初期招待コード | ✅ |
 
