@@ -1,5 +1,13 @@
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import ChatInterface from '@/components/ChatInterface';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  if (!session) {
+    redirect('/login');
+  }
+
   return <ChatInterface />;
 }

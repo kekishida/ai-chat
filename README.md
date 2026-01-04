@@ -9,6 +9,9 @@ Claude API を使用した AI チャットボットアプリケーション
 - ✅ Markdown & コードハイライト対応
 - ✅ 会話履歴の保存・管理（MongoDB）
 - ✅ レスポンシブデザイン
+- ✅ **ユーザー認証機能（NextAuth.js）**
+- ✅ **招待コード制ユーザー登録**
+- ✅ **ユーザーごとの会話履歴管理**
 - ✅ Google Cloud Run へのデプロイ対応
 - ✅ GitHub Actions による自動デプロイ（設定済み）
 
@@ -40,9 +43,30 @@ make setup-env
 ```env
 ANTHROPIC_API_KEY=your_claude_api_key_here
 MONGODB_URI=your_mongodb_uri_here
+
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here  # openssl rand -base64 32 で生成
+ADMIN_EMAIL=admin@example.com
+ADMIN_INVITE_CODE=INITIAL_INVITE_CODE
 ```
 
-### 3. 開発サーバーの起動
+### 3. データベースの初期化（初回のみ）
+
+認証システムの初期化とadminユーザーの作成：
+
+```bash
+npm run migrate:auth
+```
+
+マイグレーション完了後、以下の認証情報が利用可能になります：
+- **ユーザー名**: `admin`
+- **パスワード**: `admin123`
+- **招待コード**: `INVITE_CODE_001`, `INVITE_CODE_002`, `INVITE_CODE_003`
+
+⚠️ **重要**: 初回ログイン後、必ずパスワードを変更してください。
+
+### 4. 開発サーバーの起動
 
 ```bash
 make dev
@@ -133,6 +157,45 @@ ai-chat/
 |--------|------|------|
 | `ANTHROPIC_API_KEY` | Claude API キー | ✅ |
 | `MONGODB_URI` | MongoDB 接続文字列 | ✅ |
+| `NEXTAUTH_URL` | アプリケーションURL | ✅ |
+| `NEXTAUTH_SECRET` | NextAuth シークレットキー (`openssl rand -base64 32`で生成) | ✅ |
+| `ADMIN_EMAIL` | 管理者のメールアドレス | ✅ |
+| `ADMIN_INVITE_CODE` | 初期招待コード | ✅ |
+
+## 認証機能
+
+### ログイン
+
+アプリケーションにアクセスすると、ログインページにリダイレクトされます。
+
+初期認証情報:
+- ユーザー名: `admin`
+- パスワード: `admin123`
+
+### ユーザー登録
+
+新規ユーザーは招待コードが必要です：
+
+1. サインアップページにアクセス
+2. ユーザー名、パスワード、招待コードを入力
+3. 登録完了後、ログインページへリダイレクト
+
+### 招待コード管理
+
+管理者は新しい招待コードを生成できます：
+
+```bash
+# POST /api/invite-codes
+# 本文: { "expiresInDays": 7 } (オプション)
+```
+
+### セキュリティ
+
+- パスワードは bcrypt（cost factor 12）でハッシュ化
+- 招待コードは crypto.randomBytes(16) で生成
+- セッションは JWT で管理
+- API認証: 全エンドポイントでユーザー検証
+- データ分離: userIdによる完全なデータ隔離
 
 ## ライセンス
 

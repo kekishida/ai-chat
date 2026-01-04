@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 import { isValidObjectId } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/auth-utils';
 
 interface RouteParams {
   params: Promise<{
@@ -12,6 +13,15 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    // Authentication check
+    const user = await getCurrentUser();
+    if (!user || !user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     // Validate ObjectId
@@ -25,8 +35,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Connect to database
     await connectDB();
 
-    // Fetch conversation
-    const conversation = await Conversation.findById(id).lean();
+    // Fetch conversation with ownership check
+    const conversation = await Conversation.findOne({
+      _id: id,
+      userId: user.id,
+    }).lean();
 
     if (!conversation) {
       return NextResponse.json(
@@ -56,6 +69,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    // Authentication check
+    const user = await getCurrentUser();
+    if (!user || !user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     // Validate ObjectId
@@ -69,8 +91,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Connect to database
     await connectDB();
 
-    // Delete conversation
-    const deletedConversation = await Conversation.findByIdAndDelete(id);
+    // Delete conversation with ownership check
+    const deletedConversation = await Conversation.findOneAndDelete({
+      _id: id,
+      userId: user.id,
+    });
 
     if (!deletedConversation) {
       return NextResponse.json(

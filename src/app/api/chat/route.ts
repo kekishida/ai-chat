@@ -4,9 +4,19 @@ import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 import { getChatCompletionStream } from '@/lib/claude';
 import { generateConversationTitle } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/auth-utils';
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const user = await getCurrentUser();
+    if (!user || !user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Parse request body
     const body = await request.json();
     const { conversationId, message } = body;
@@ -28,9 +38,25 @@ export async function POST(request: NextRequest) {
     // Create new conversation if conversationId is not provided
     if (!currentConversationId) {
       const title = generateConversationTitle(message);
-      const newConversation = await Conversation.create({ title });
+      const newConversation = await Conversation.create({
+        title,
+        userId: user.id,
+      });
       currentConversationId = newConversation._id.toString();
       isNewConversation = true;
+    } else {
+      // Verify conversation ownership
+      const conversation = await Conversation.findOne({
+        _id: currentConversationId,
+        userId: user.id,
+      });
+
+      if (!conversation) {
+        return NextResponse.json(
+          { error: 'Conversation not found or unauthorized' },
+          { status: 404 }
+        );
+      }
     }
 
     // Save user message
